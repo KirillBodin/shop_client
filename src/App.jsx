@@ -48,9 +48,9 @@ export default function App() {
         <div className="nav-wrapper container">
           {/* Бургер для мобильной sidenav */}
           {user && (
-            <a href="#!" data-target="mobile-sidenav" className="sidenav-trigger">
-              <i className="material-icons">menu</i>
-            </a>
+     <a href="#" onClick={e => e.preventDefault()} data-target="mobile-sidenav" className="sidenav-trigger">
+     <i className="material-icons">menu</i>
+   </a>
           )}
 
           <Link to="/" className="brand-logo" style={{ fontWeight: 600, fontSize: "1.6rem" }}>
@@ -68,17 +68,17 @@ export default function App() {
               {/* Admin dropdown */}
               {isAdmin && (
                 <li>
-                  <a className="dropdown-trigger" href="#!" data-target="admin-dd">
-                    Administration ▾
-                  </a>
+  <a className="dropdown-trigger" href="#" onClick={e => e.preventDefault()} data-target="admin-dd">
+    Administration ▾
+  </a>
                 </li>
               )}
 
               {/* Иконка пользователя = dropdown со списком Profile / Orders / Sign out */}
               <li>
-                <a className="dropdown-trigger" href="#!" data-target="user-dd" aria-label="Account menu">
-                  <i className="material-icons">person</i>
-                </a>
+              <a className="dropdown-trigger" href="#" onClick={e => e.preventDefault()} data-target="user-dd" aria-label="Account menu">
+    <i className="material-icons">person</i>
+  </a>
               </li>
             </ul>
           )}
@@ -101,7 +101,7 @@ export default function App() {
           <li><Link to="/profile">Profile</Link></li>
           <li><Link to="/orders">Orders</Link></li>
           <li className="divider" tabIndex="-1"></li>
-          <li><a href="#!" onClick={logout}>Sign out</a></li>
+          <li><a href="#" onClick={(e) => { e.preventDefault(); logout(); }}>Sign out</a></li>
         </ul>
       )}
 
