@@ -1,7 +1,7 @@
 // src/auth.jsx
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { AuthAPI, ProfileAPI, getToken, setToken } from "./api";
-
+import { useNavigate } from "react-router-dom";
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
@@ -79,13 +79,13 @@ export function AuthProvider({ children }) {
   };
 
   // Логаут (железный)
-  const logout = async () => {
-    try { await AuthAPI.logout(); } catch (_) {}
+  const navigate = useNavigate();
+  const logout = () => {
+    // чистим токен/стейт
     setToken(null);
     setUser(null);
-    localStorage.removeItem("cart");
-    // Жёстко уходим на /auth, чтобы дерево гарантированно пересобралось
-    window.location.replace("/auth");
+    // мягкая навигация внутри SPA
+    navigate("/auth", { replace: true });
   };
 
   const value = useMemo(() => ({
