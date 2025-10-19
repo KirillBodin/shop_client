@@ -1,6 +1,11 @@
 // src/main.jsx
 // Materialize CSS убран для решения проблемы с logout
 import "./styles.css";
+import { M, Modal } from "./utils";
+
+// Делаем утилиты доступными глобально для совместимости
+window.M = M;
+window.Modal = Modal;
 
 import React from "react";
 import ReactDOM from "react-dom/client";
