@@ -32,19 +32,51 @@ export default function App() {
   const isAdmin = user?.role === "admin";
   const fullName = `${user?.first_name || ""} ${user?.last_name || ""}`.trim();
 
-  // ИНИЦИАЛИЗИРУЕМ ОДИН РАЗ (без destroy)
+  // ИНИЦИАЛИЗИРУЕМ Materialize с обработкой ошибок
   useEffect(() => {
-    const ddEls = document.querySelectorAll(".dropdown-trigger");
-    window.M?.Dropdown?.init?.(ddEls, {
-      constrainWidth: false,
-      coverTrigger: false,
-      alignment: "right",
-      container: document.body,
-    });
+    try {
+      // Очищаем существующие инстансы перед инициализацией
+      document.querySelectorAll(".dropdown-trigger").forEach((el) => {
+        try {
+          const instance = window.M?.Dropdown?.getInstance?.(el);
+          if (instance) {
+            instance.destroy();
+          }
+        } catch (e) {
+          // Игнорируем ошибки
+        }
+      });
 
-    const snEls = document.querySelectorAll(".sidenav");
-    window.M?.Sidenav?.init?.(snEls, { edge: "left" });
-  }, []); // <— один раз
+      document.querySelectorAll(".sidenav").forEach((el) => {
+        try {
+          const instance = window.M?.Sidenav?.getInstance?.(el);
+          if (instance) {
+            instance.destroy();
+          }
+        } catch (e) {
+          // Игнорируем ошибки
+        }
+      });
+
+      // Инициализируем новые инстансы
+      const ddEls = document.querySelectorAll(".dropdown-trigger");
+      if (ddEls.length > 0) {
+        window.M?.Dropdown?.init?.(ddEls, {
+          constrainWidth: false,
+          coverTrigger: false,
+          alignment: "right",
+          container: document.body,
+        });
+      }
+
+      const snEls = document.querySelectorAll(".sidenav");
+      if (snEls.length > 0) {
+        window.M?.Sidenav?.init?.(snEls, { edge: "left" });
+      }
+    } catch (error) {
+      console.warn("Materialize initialization error:", error);
+    }
+  }, [user]); // Переинициализируем при изменении пользователя
 
   return (
     <>
