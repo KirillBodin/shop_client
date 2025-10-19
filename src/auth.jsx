@@ -78,32 +78,14 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // Логаут (максимально безопасный подход)
-  const navigate = useNavigate();
-  
-  const logout = async () => {
-    try {
-      // 1) Вызываем серверный logout
-      await AuthAPI.logout();
-    } catch (error) {
-      console.warn("Server logout failed:", error);
-    }
-    
-    // 2) Очищаем локальное состояние
+  // Логаут (максимально простой подход)
+  const logout = () => {
+    // 1) Очищаем память
     setToken(null);
     setUser(null);
     
-    // 3) Используем setTimeout для безопасной навигации
-    // Это предотвращает конфликты с React Fiber
-    setTimeout(() => {
-      try {
-        navigate("/auth", { replace: true });
-      } catch (error) {
-        // Фолбэк на прямую навигацию
-        console.warn("Navigation failed, using fallback:", error);
-        window.location.href = window.location.origin + window.location.pathname + "#/auth";
-      }
-    }, 0);
+    // 2) Просто перезагружаем страницу на логин
+    window.location.href = window.location.origin + window.location.pathname + "#/auth";
   };
 
   
