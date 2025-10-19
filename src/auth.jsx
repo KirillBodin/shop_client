@@ -81,18 +81,34 @@ export function AuthProvider({ children }) {
   // Логаут (железный)
   const navigate = useNavigate();
   // в src/auth.jsx
-const logout = () => {
-  setToken(null);
-  setUser(null);
-  try {
-    navigate("/auth", { replace: true });
-  } finally {
-    // Фолбэк на любой хостинг: гарантированно уйдём на страницу авторизации
-    if (location.hash !== "#/auth") {
-      location.hash = "#/auth";
+  const logout = () => {
+    // 1) уничтожим UI-инстансы Materialize, чтобы они не трогали уже удалённый DOM
+    try {
+      document.querySelectorAll(".dropdown-trigger").forEach((el) => {
+        const inst = window.M?.Dropdown.getInstance(el);
+        inst && inst.destroy();
+      });
+      document.querySelectorAll(".sidenav").forEach((el) => {
+        const inst = window.M?.Sidenav.getInstance(el);
+        inst && inst.destroy();
+      });
+    } catch {}
+  
+    // 2) чистим auth-стейт
+    setToken(null);
+    setUser(null);
+  
+    // 3) навигация в /auth
+    try {
+      navigate("/auth", { replace: true });
+    } finally {
+      // фолбэк для HashRouter или на случай, если роутер ещё не смонтировался
+      if (location.hash && location.hash !== "#/auth") {
+        location.hash = "#/auth";
+      }
     }
-  }
-};
+  };
+  
 
 
   const value = useMemo(() => ({

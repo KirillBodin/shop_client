@@ -12,7 +12,7 @@ import Profile from "./pages/Profile";
 import AdminItems from "./pages/AdminItems";
 import AdminUsers from "./pages/AdminUsers";
 
-// Guarded route
+// --- Guarded route ---
 function Private({ children }) {
   const { user, loading } = useAuth();
   if (loading) return <div className="container" style={{ marginTop: 30 }}>Loading…</div>;
@@ -20,7 +20,7 @@ function Private({ children }) {
   return children;
 }
 
-// Redirect from "/"
+// --- Redirect from "/" ---
 function HomeRedirect() {
   const { user, loading } = useAuth();
   if (loading) return null;
@@ -30,16 +30,43 @@ function HomeRedirect() {
 export default function App() {
   const { user, logout } = useAuth();
   const isAdmin = user?.role === "admin";
-
-  useEffect(() => {
-    const dds = document.querySelectorAll(".dropdown-trigger");
-    window.M?.Dropdown.init(dds, { constrainWidth: false, coverTrigger: false, alignment: "right" });
-
-    const sidenavs = document.querySelectorAll(".sidenav");
-    window.M?.Sidenav.init(sidenavs, { edge: "left" });
-  }, [user, isAdmin]);
-
   const fullName = `${user?.first_name || ""} ${user?.last_name || ""}`.trim();
+
+  // Инициализируем Materialize-виджеты и корректно уничтожаем их,
+  // чтобы избежать "removeChild: not a child" при logout/размонтаже
+  useEffect(() => {
+    if (!user) return;
+
+    // Dropdowns
+    const ddEls = document.querySelectorAll(".dropdown-trigger");
+    const ddInstances =
+      (window.M?.Dropdown.init?.(ddEls, {
+        constrainWidth: false,
+        coverTrigger: false,
+        alignment: "right",
+      }) as any[]) || [];
+
+    // Sidenavs
+    const snEls = document.querySelectorAll(".sidenav");
+    const snInstances =
+      (window.M?.Sidenav.init?.(snEls, { edge: "left" }) as any[]) || [];
+
+    return () => {
+      try {
+        ddInstances.forEach((inst) => {
+          if (inst?.close) inst.close();
+          if (inst?.destroy) inst.destroy();
+        });
+        snInstances.forEach((inst) => {
+          if (inst?.close) inst.close();
+          if (inst?.destroy) inst.destroy();
+        });
+      } catch {
+        // no-op
+      }
+    };
+    // Привязываемся к user.id/role, чтобы пересоздавать инстансы при смене пользователя/ролей
+  }, [user?.id, isAdmin]);
 
   return (
     <>
@@ -48,9 +75,14 @@ export default function App() {
         <div className="nav-wrapper container">
           {/* Бургер для мобильной sidenav */}
           {user && (
-     <a href="#" onClick={e => e.preventDefault()} data-target="mobile-sidenav" className="sidenav-trigger">
-     <i className="material-icons">menu</i>
-   </a>
+            <a
+              href="#!"
+              data-target="mobile-sidenav"
+              className="sidenav-trigger"
+              aria-label="Open menu"
+            >
+              <i className="material-icons">menu</i>
+            </a>
           )}
 
           <Link to="/" className="brand-logo" style={{ fontWeight: 600, fontSize: "1.6rem" }}>
@@ -59,26 +91,40 @@ export default function App() {
 
           {user && (
             <ul id="nav-desktop" className="right hide-on-med-and-down">
-              {/* Отдельная ссылка Cart */}
+              {/* Cart */}
               <li><Link to="/cart">Cart</Link></li>
-
-              {/* Catalog всегда под рукой */}
+              {/* Catalog */}
               <li><Link to="/catalog">Catalog</Link></li>
 
               {/* Admin dropdown */}
               {isAdmin && (
                 <li>
-  <a className="dropdown-trigger" href="#" onClick={e => e.preventDefault()} data-target="admin-dd">
-    Administration ▾
-  </a>
+                  <a
+                    className="dropdown-trigger"
+                    href="#!"
+                    data-target="admin-dd"
+                    aria-haspopup="true"
+                    aria-controls="admin-dd"
+                    onClick={(e) => e.preventDefault()}
+                  >
+                    Administration ▾
+                  </a>
                 </li>
               )}
 
-              {/* Иконка пользователя = dropdown со списком Profile / Orders / Sign out */}
+              {/* User dropdown (иконка «person») */}
               <li>
-              <a className="dropdown-trigger" href="#" onClick={e => e.preventDefault()} data-target="user-dd" aria-label="Account menu">
-    <i className="material-icons">person</i>
-  </a>
+                <a
+                  className="dropdown-trigger"
+                  href="#!"
+                  data-target="user-dd"
+                  aria-label="Account menu"
+                  aria-haspopup="true"
+                  aria-controls="user-dd"
+                  onClick={(e) => e.preventDefault()}
+                >
+                  <i className="material-icons">person</i>
+                </a>
               </li>
             </ul>
           )}
@@ -93,15 +139,41 @@ export default function App() {
         </ul>
       )}
 
-      {/* User dropdown (на иконке «person») */}
+      {/* User dropdown */}
       {user && (
         <ul id="user-dd" className="dropdown-content">
-          <li className="disabled"><a href="#!">{fullName || "User"}{user?.role ? ` (${user.role})` : ""}</a></li>
-          <li className="divider" tabIndex="-1"></li>
+          <li className="disabled">
+            <a href="#!">
+              {fullName || "User"}
+              {user?.role ? ` (${user.role})` : ""}
+            </a>
+          </li>
+          <li className="divider" tabIndex={-1}></li>
           <li><Link to="/profile">Profile</Link></li>
           <li><Link to="/orders">Orders</Link></li>
-          <li className="divider" tabIndex="-1"></li>
-          <li><a href="#" onClick={(e) => { e.preventDefault(); logout(); }}>Sign out</a></li>
+          <li className="divider" tabIndex={-1}></li>
+          <li>
+            <a
+              href="#!"
+              onClick={(e) => {
+                e.preventDefault();
+                // На всякий уничтожим активные инстансы, если вдруг что-то осталось
+                try {
+                  document.querySelectorAll(".dropdown-trigger").forEach((el) => {
+                    const inst = window.M?.Dropdown?.getInstance?.(el);
+                    inst && inst.destroy();
+                  });
+                  document.querySelectorAll(".sidenav").forEach((el) => {
+                    const inst = window.M?.Sidenav?.getInstance?.(el);
+                    inst && inst.destroy();
+                  });
+                } catch {}
+                logout();
+              }}
+            >
+              Sign out
+            </a>
+          </li>
         </ul>
       )}
 
@@ -130,7 +202,23 @@ export default function App() {
           )}
 
           <li className="divider" />
-          <li><a href="#!" onClick={logout}>Sign out</a></li>
+          <li>
+            <a
+              href="#!"
+              onClick={(e) => {
+                e.preventDefault();
+                try {
+                  const sn = window.M?.Sidenav?.getInstance?.(
+                    document.getElementById("mobile-sidenav")
+                  );
+                  sn && sn.close();
+                } catch {}
+                logout();
+              }}
+            >
+              Sign out
+            </a>
+          </li>
         </ul>
       )}
 
