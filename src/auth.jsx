@@ -80,13 +80,20 @@ export function AuthProvider({ children }) {
 
   // Логаут (железный)
   const navigate = useNavigate();
-  const logout = () => {
-    // чистим токен/стейт
-    setToken(null);
-    setUser(null);
-    // мягкая навигация внутри SPA
+  // в src/auth.jsx
+const logout = () => {
+  setToken(null);
+  setUser(null);
+  try {
     navigate("/auth", { replace: true });
-  };
+  } finally {
+    // Фолбэк на любой хостинг: гарантированно уйдём на страницу авторизации
+    if (location.hash !== "#/auth") {
+      location.hash = "#/auth";
+    }
+  }
+};
+
 
   const value = useMemo(() => ({
     user,
