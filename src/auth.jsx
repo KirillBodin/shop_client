@@ -78,75 +78,26 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // Логаут (безопасный подход)
+  // Логаут (радикальный подход)
   const navigate = useNavigate();
   
   const logout = async () => {
     try {
-      // 1) Сначала вызываем серверный logout
+      // 1) Вызываем серверный logout
       await AuthAPI.logout();
     } catch (error) {
-      // Игнорируем ошибки сервера, продолжаем локальный logout
       console.warn("Server logout failed:", error);
     }
     
-    // 2) Полностью отключаем Materialize перед изменением состояния
-    try {
-      // Уничтожаем все инстансы Materialize
-      if (window.M) {
-        // Dropdowns
-        const dropdowns = document.querySelectorAll(".dropdown-trigger");
-        dropdowns.forEach((el) => {
-          try {
-            const instance = window.M.Dropdown?.getInstance?.(el);
-            if (instance) {
-              instance.destroy();
-            }
-          } catch (e) {
-            // Игнорируем ошибки
-          }
-        });
-        
-        // Sidenavs
-        const sidenavs = document.querySelectorAll(".sidenav");
-        sidenavs.forEach((el) => {
-          try {
-            const instance = window.M.Sidenav?.getInstance?.(el);
-            if (instance) {
-              instance.destroy();
-            }
-          } catch (e) {
-            // Игнорируем ошибки
-          }
-        });
-        
-        // Удаляем все overlay элементы
-        const overlays = document.querySelectorAll(".sidenav-overlay, .drag-target, .modal-overlay");
-        overlays.forEach((el) => {
-          try {
-            if (el && el.parentNode) {
-              el.parentNode.removeChild(el);
-            }
-          } catch (e) {
-            // Игнорируем ошибки
-          }
-        });
-      }
-    } catch (error) {
-      console.warn("Materialize cleanup error:", error);
-    }
-    
-    // 3) Очищаем локальное состояние
+    // 2) Очищаем локальное состояние
     setToken(null);
     setUser(null);
     
-    // 4) Навигируем на страницу авторизации
-    try {
-      navigate("/auth", { replace: true });
-    } catch (error) {
-      // Фолбэк на HashRouter
-      window.location.hash = "#/auth";
-    }
+    // 3) Принудительно перезагружаем страницу для полной очистки
+    // Это гарантированно решает проблему с Materialize и React Fiber
+    setTimeout(() => {
+      window.location.href = window.location.origin + window.location.pathname + "#/auth";
+    }, 100);
   };
 
   
