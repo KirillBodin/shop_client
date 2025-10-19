@@ -1,5 +1,5 @@
 // src/App.jsx
-import { useEffect, useCallback } from "react";
+import { useEffect } from "react";
 import { Link, Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "./auth";
 
@@ -32,135 +32,74 @@ export default function App() {
   const isAdmin = user?.role === "admin";
   const fullName = `${user?.first_name || ""} ${user?.last_name || ""}`.trim();
 
-  // Полная зачистка инстансов/оверлеев Materialize
-  const hardCleanupMaterialize = useCallback(() => {
-    try {
-      document.querySelectorAll(".dropdown-trigger").forEach((el) => {
-        const inst = window.M?.Dropdown?.getInstance?.(el);
-        inst?.close?.();
-        inst?.destroy?.();
-      });
-      document.querySelectorAll(".sidenav").forEach((el) => {
-        const inst = window.M?.Sidenav?.getInstance?.(el);
-        inst?.close?.();
-        inst?.destroy?.();
-      });
-    } catch {}
-    // зачистим возможные оверлеи/drag targets
-    document
-      .querySelectorAll(".sidenav-overlay,.drag-target,.modal-overlay")
-      .forEach((el) => el.remove());
-  }, []);
-
-  // Логаут в два такта: 1) destroy M.* 2) на следующий кадр — logout()
-  const handleLogoutClick = useCallback(
-    (e) => {
-      e?.preventDefault?.();
-      hardCleanupMaterialize();
-      requestAnimationFrame(() => {
-        logout(); // внутри у тебя navigate("/auth") + очистка токена/стейта
-      });
-    },
-    [hardCleanupMaterialize, logout]
-  );
-
-  // Инициализация Materialize (и корректный destroy)
+  // ИНИЦИАЛИЗИРУЕМ ОДИН РАЗ (без destroy)
   useEffect(() => {
-    // Инициализируем только когда пользователь есть
-    if (!user) return;
-
-    // dropdowns
     const ddEls = document.querySelectorAll(".dropdown-trigger");
-    const ddInstances =
-      window.M?.Dropdown?.init?.(ddEls, {
-        constrainWidth: false,
-        coverTrigger: false,
-        alignment: "right",
-        container: document.body, // критично, чтобы контент переносился в body
-      }) || [];
+    window.M?.Dropdown?.init?.(ddEls, {
+      constrainWidth: false,
+      coverTrigger: false,
+      alignment: "right",
+      container: document.body,
+    });
 
-    // sidenavs
     const snEls = document.querySelectorAll(".sidenav");
-    const snInstances = window.M?.Sidenav?.init?.(snEls, { edge: "left" }) || [];
-
-    return () => {
-      try {
-        ddInstances.forEach((i) => {
-          i?.close?.();
-          i?.destroy?.();
-        });
-        snInstances.forEach((i) => {
-          i?.close?.();
-          i?.destroy?.();
-        });
-      } catch {}
-      // подчистим любые оставшиеся оверлеи
-      document
-        .querySelectorAll(".sidenav-overlay,.drag-target,.modal-overlay")
-        .forEach((el) => el.remove());
-    };
-  }, [user?.id, isAdmin]);
+    window.M?.Sidenav?.init?.(snEls, { edge: "left" });
+  }, []); // <— один раз
 
   return (
     <>
-      {/* Navbar */}
+      {/* Navbar (всегда в DOM) */}
       <nav className="blue darken-3">
         <div className="nav-wrapper container">
           {/* Бургер для мобильной sidenav */}
-          {user && (
-            <a
-              href="#!"
-              data-target="mobile-sidenav"
-              className="sidenav-trigger"
-              aria-label="Open menu"
-            >
-              <i className="material-icons">menu</i>
-            </a>
-          )}
+          <a
+            href="#!"
+            data-target="mobile-sidenav"
+            className={`sidenav-trigger ${user ? "" : "hide"}`}
+            aria-label="Open menu"
+          >
+            <i className="material-icons">menu</i>
+          </a>
 
           <Link to="/" className="brand-logo" style={{ fontWeight: 600, fontSize: "1.6rem" }}>
             Shop
           </Link>
 
-          {user && (
-            <ul id="nav-desktop" className="right hide-on-med-and-down">
-              <li><Link to="/cart">Cart</Link></li>
-              <li><Link to="/catalog">Catalog</Link></li>
+          <ul id="nav-desktop" className={`right hide-on-med-and-down ${user ? "" : "hide"}`}>
+            <li><Link to="/cart">Cart</Link></li>
+            <li><Link to="/catalog">Catalog</Link></li>
 
-              {isAdmin && (
-                <li>
-                  <a
-                    className="dropdown-trigger"
-                    href="#!"
-                    data-target="admin-dd"
-                    aria-haspopup="true"
-                    aria-controls="admin-dd"
-                    onClick={(e) => e.preventDefault()}
-                  >
-                    Administration ▾
-                  </a>
-                </li>
-              )}
+            <li className={isAdmin ? "" : "hide"}>
+              <a
+                className="dropdown-trigger"
+                href="#!"
+                data-target="admin-dd"
+                aria-haspopup="true"
+                aria-controls="admin-dd"
+                onClick={(e) => e.preventDefault()}
+              >
+                Administration ▾
+              </a>
+            </li>
 
-              <li>
-                <a
-                  className="dropdown-trigger"
-                  href="#!"
-                  data-target="user-dd"
-                  aria-label="Account menu"
-                  aria-haspopup="true"
-                  aria-controls="user-dd"
-                  onClick={(e) => e.preventDefault()}
-                >
-                  <i className="material-icons">person</i>
-                </a>
-              </li>
-            </ul>
-          )}
+            <li>
+              <a
+                className="dropdown-trigger"
+                href="#!"
+                data-target="user-dd"
+                aria-label="Account menu"
+                aria-haspopup="true"
+                aria-controls="user-dd"
+                onClick={(e) => e.preventDefault()}
+              >
+                <i className="material-icons">person</i>
+              </a>
+            </li>
+          </ul>
         </div>
       </nav>
 
-      {/* Admin dropdown — ВСЕГДА в DOM */}
+      {/* Admin dropdown — ВСЕГДА в DOM (контент условный) */}
       <ul id="admin-dd" className="dropdown-content">
         {isAdmin ? (
           <>
@@ -172,7 +111,7 @@ export default function App() {
         )}
       </ul>
 
-      {/* User dropdown — ВСЕГДА в DOM */}
+      {/* User dropdown — ВСЕГДА в DOM (контент условный) */}
       <ul id="user-dd" className="dropdown-content">
         {user ? (
           <>
@@ -187,7 +126,9 @@ export default function App() {
             <li><Link to="/orders">Orders</Link></li>
             <li className="divider" tabIndex={-1}></li>
             <li>
-              <a href="#!" onClick={handleLogoutClick}>Sign out</a>
+              <a href="#!" onClick={(e) => { e.preventDefault(); logout(); }}>
+                Sign out
+              </a>
             </li>
           </>
         ) : (
@@ -195,7 +136,7 @@ export default function App() {
         )}
       </ul>
 
-      {/* Mobile sidenav — держим в DOM всегда, контент условный */}
+      {/* Mobile sidenav — ВСЕГДА в DOM (контент условный) */}
       <ul className="sidenav" id="mobile-sidenav">
         {user ? (
           <>
@@ -232,7 +173,7 @@ export default function App() {
                     );
                     sn?.close?.();
                   } catch {}
-                  handleLogoutClick();
+                  logout();
                 }}
               >
                 Sign out
