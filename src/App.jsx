@@ -125,7 +125,7 @@ export default function App() {
   }, [user]);
 
   return (
-    <>
+    <div>
       {/* Navbar (всегда в DOM) */}
       <nav className="blue darken-3">
         <div className="nav-wrapper container">
@@ -180,10 +180,10 @@ export default function App() {
       {/* Admin dropdown — ВСЕГДА в DOM (контент условный) */}
       <ul id="admin-dd" className="dropdown-content">
         {isAdmin ? (
-          <>
+          <div>
             <li><Link to="/admin/items">Items</Link></li>
             <li><Link to="/admin/users">Users</Link></li>
-          </>
+          </div>
         ) : (
           <li className="disabled"><a href="#!">No admin</a></li>
         )}
@@ -192,7 +192,7 @@ export default function App() {
       {/* User dropdown — ВСЕГДА в DOM (контент условный) */}
       <ul id="user-dd" className="dropdown-content">
         {user ? (
-          <>
+          <div>
             <li className="disabled">
               <a href="#!">
                 {fullName || "User"}
@@ -208,7 +208,7 @@ export default function App() {
                 Sign out
               </a>
             </li>
-          </>
+          </div>
         ) : (
           <li className="disabled"><a href="#!">Not signed in</a></li>
         )}
@@ -220,7 +220,7 @@ export default function App() {
       {/* Mobile sidenav — ВСЕГДА в DOM (контент условный) */}
       <ul className="sidenav" id="mobile-sidenav">
         {user ? (
-          <>
+          <div>
             <li>
               <div className="user-view">
                 <div className="background blue lighten-2"></div>
@@ -235,11 +235,11 @@ export default function App() {
             <li><Link to="/profile">Profile</Link></li>
 
             {isAdmin && (
-              <>
+              <div>
                 <li className="divider" />
                 <li><Link to="/admin/items">Admin · Items</Link></li>
                 <li><Link to="/admin/users">Admin · Users</Link></li>
-              </>
+              </div>
             )}
 
             <li className="divider" />
@@ -254,7 +254,7 @@ export default function App() {
                 Sign out
               </a>
             </li>
-          </>
+          </div>
         ) : (
           <li className="disabled"><a href="#!">Not signed in</a></li>
         )}
@@ -292,6 +292,6 @@ export default function App() {
           <Route path="*" element={<Navigate to="/auth" replace />} />
         </Routes>
       </main>
-    </>
+    </div>
   );
 }

@@ -49,7 +49,7 @@ export default function Cart() {
           </div>
         </div>
       ) : (
-        <>
+        <div>
           <div className="col s12">
             <table className="striped responsive-table">
               <thead>
@@ -119,7 +119,7 @@ export default function Cart() {
               </div>
             </div>
           </div>
-        </>
+        </div>
       )}
     </div>
   );

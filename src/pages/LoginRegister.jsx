@@ -178,7 +178,7 @@ export default function LoginRegister() {
 <form onSubmit={onSubmit} style={{ marginTop: 12 }}>
   <div className="row" style={{ marginBottom: 0 }}>
     {!isLogin && (
-      <>
+      <div>
         <div className="input-field col s6">
           <input
             id="first_name"
@@ -200,7 +200,7 @@ export default function LoginRegister() {
           />
           <label htmlFor="last_name" className="active">Last name</label>
         </div>
-      </>
+      </div>
     )}
 
     <div className="input-field col s12">

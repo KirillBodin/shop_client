@@ -22,7 +22,7 @@ export default function Items() {
   }, [q]);
 
   return (
-    <>
+    <div>
       {/* Search */}
       <div className="row">
         <div className="col s12 m8 l6">
@@ -124,6 +124,6 @@ export default function Items() {
           )}
         </div>
       )}
-    </>
+    </div>
   );
 }
