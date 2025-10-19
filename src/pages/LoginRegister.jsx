@@ -251,7 +251,7 @@ export default function LoginRegister() {
       className={`btn waves-effect waves-light ${submitting ? "disabled" : ""}`}
       disabled={submitting}
     >
-      {submitting ? "Please wait..." : isLogin ? "Sign in" : "Create account"}
+      {submitting ? "Please wait..." : isLogin ? "Sign in" : "Create accountf"}
     </button>
   </div>
 </form>
