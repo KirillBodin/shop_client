@@ -163,7 +163,7 @@ export default function LoginRegister() {
               display: "block",
             }}
           >
-            {isLogin ? "Welcome back" : "Join us"}
+            {isLogin ? "Welcome backl" : "Join us"}
           </span>
 
           {err && (

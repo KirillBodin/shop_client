@@ -133,15 +133,13 @@ console.error = (...args) => {
 
 // --- React 18 Root render ---
 ReactDOM.createRoot(document.getElementById("root")).render(
-  <React.StrictMode>
-    <HashRouter>
-      <ErrorBoundary>
-        <AuthProvider>
-          <CartProvider>
-            <App />
-          </CartProvider>
-        </AuthProvider>
-      </ErrorBoundary>
-    </HashRouter>
-  </React.StrictMode>
+  <HashRouter>
+    <ErrorBoundary>
+      <AuthProvider>
+        <CartProvider>
+          <App />
+        </CartProvider>
+      </AuthProvider>
+    </ErrorBoundary>
+  </HashRouter>
 );

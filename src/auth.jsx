@@ -78,13 +78,10 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // Логаут (максимально простой подход)
+  // Логаут (ультра простой подход)
   const logout = () => {
-    // 1) Очищаем память
-    setToken(null);
-    setUser(null);
-    
-    // 2) Просто перезагружаем страницу на логин
+    // Просто перезагружаем страницу на логин
+    // Очистка памяти произойдет автоматически при перезагрузке
     window.location.href = window.location.origin + window.location.pathname + "#/auth";
   };
 
