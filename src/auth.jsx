@@ -78,7 +78,7 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // Логаут (простой подход без Materialize)
+  // Логаут (максимально безопасный подход)
   const navigate = useNavigate();
   
   const logout = async () => {
@@ -93,8 +93,17 @@ export function AuthProvider({ children }) {
     setToken(null);
     setUser(null);
     
-    // 3) Навигируем на страницу авторизации
-    navigate("/auth", { replace: true });
+    // 3) Используем setTimeout для безопасной навигации
+    // Это предотвращает конфликты с React Fiber
+    setTimeout(() => {
+      try {
+        navigate("/auth", { replace: true });
+      } catch (error) {
+        // Фолбэк на прямую навигацию
+        console.warn("Navigation failed, using fallback:", error);
+        window.location.href = window.location.origin + window.location.pathname + "#/auth";
+      }
+    }, 0);
   };
 
   

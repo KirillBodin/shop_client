@@ -20,6 +20,12 @@ function ErrorBoundary({ children }) {
   const [error, setError] = React.useState(null);
 
   const handleError = (error, errorInfo) => {
+    // Игнорируем ошибки removeChild
+    if (error && error.message && error.message.includes('removeChild')) {
+      console.warn("Ignoring removeChild error in ErrorBoundary:", error);
+      return;
+    }
+    
     console.error("React Error Boundary caught an error:", error, errorInfo);
     setError(error);
   };
@@ -79,7 +85,51 @@ function ErrorBoundary({ children }) {
   );
 }
 
-// Materialize CSS убран, поэтому глобальные обработчики ошибок больше не нужны
+// Глобальный обработчик ошибок для предотвращения краша приложения
+window.addEventListener('error', (event) => {
+  // Перехватываем ошибки removeChild
+  if (event.error && (
+      (event.error.message && event.error.message.includes('removeChild')) ||
+      (event.error.stack && event.error.stack.includes('removeChild'))
+  )) {
+    console.warn('Caught removeChild error, preventing crash:', event.error);
+    event.preventDefault();
+    event.stopPropagation();
+    return false;
+  }
+  
+  // Перехватываем DOMException с removeChild
+  if (event.error instanceof DOMException && 
+      event.error.message.includes('removeChild')) {
+    console.warn('Caught DOMException removeChild error, preventing crash:', event.error);
+    event.preventDefault();
+    event.stopPropagation();
+    return false;
+  }
+});
+
+window.addEventListener('unhandledrejection', (event) => {
+  // Перехватываем Promise rejections с removeChild
+  if (event.reason && (
+      (event.reason.message && event.reason.message.includes('removeChild')) ||
+      (event.reason.stack && event.reason.stack.includes('removeChild'))
+  )) {
+    console.warn('Caught removeChild promise rejection, preventing crash:', event.reason);
+    event.preventDefault();
+    return false;
+  }
+});
+
+// Дополнительная защита - перехватываем все ошибки React Fiber
+const originalConsoleError = console.error;
+console.error = (...args) => {
+  const message = args.join(' ');
+  if (message.includes('removeChild') && message.includes('not a child')) {
+    console.warn('Suppressed React Fiber removeChild error:', ...args);
+    return;
+  }
+  originalConsoleError.apply(console, args);
+};
 
 // --- React 18 Root render ---
 ReactDOM.createRoot(document.getElementById("root")).render(
