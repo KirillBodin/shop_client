@@ -81,33 +81,47 @@ export function AuthProvider({ children }) {
   // Логаут (железный)
   const navigate = useNavigate();
   // в src/auth.jsx
-  const logout = () => {
-    // 1) уничтожим UI-инстансы Materialize, чтобы они не трогали уже удалённый DOM
-    try {
-      document.querySelectorAll(".dropdown-trigger").forEach((el) => {
-        const inst = window.M?.Dropdown.getInstance(el);
-        inst && inst.destroy();
-      });
-      document.querySelectorAll(".sidenav").forEach((el) => {
-        const inst = window.M?.Sidenav.getInstance(el);
-        inst && inst.destroy();
-      });
-    } catch {}
-  
-    // 2) чистим auth-стейт
+ // src/auth.jsx
+const logout = () => {
+  // 1) Аккуратно закрываем/уничтожаем все Materialize-инстансы,
+  //    пока DOM ещё на месте
+  try {
+    // dropdowns
+    document.querySelectorAll(".dropdown-trigger").forEach((el) => {
+      const inst = window.M?.Dropdown?.getInstance?.(el);
+      inst?.close?.();
+      inst?.destroy?.();
+    });
+    // sidenavs
+    document.querySelectorAll(".sidenav").forEach((el) => {
+      const inst = window.M?.Sidenav?.getInstance?.(el);
+      inst?.close?.();
+      inst?.destroy?.();
+    });
+    // подчистим всё, что Materialize вешает на body
+    document
+      .querySelectorAll(".sidenav-overlay,.drag-target,.modal-overlay")
+      .forEach((el) => el.remove());
+  } catch {}
+
+  // 2) На следующий кадр — чистим токен/стейт и навигируем.
+  //    Это даёт Materialize завершить destroy(), чтобы React не успел
+  //    убрать узлы раньше и не словить removeChild(..)
+  requestAnimationFrame(() => {
     setToken(null);
     setUser(null);
-  
-    // 3) навигация в /auth
+
     try {
       navigate("/auth", { replace: true });
     } finally {
-      // фолбэк для HashRouter или на случай, если роутер ещё не смонтировался
+      // Фолбэк на HashRouter (если ты его используешь — а судя по main.jsx, да)
       if (location.hash && location.hash !== "#/auth") {
         location.hash = "#/auth";
       }
     }
-  };
+  });
+};
+
   
 
 

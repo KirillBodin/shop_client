@@ -1,5 +1,5 @@
 // src/App.jsx
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { Link, Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "./auth";
 
@@ -32,40 +32,73 @@ export default function App() {
   const isAdmin = user?.role === "admin";
   const fullName = `${user?.first_name || ""} ${user?.last_name || ""}`.trim();
 
-  // Инициализируем Materialize-виджеты и корректно уничтожаем их,
-  // чтобы избежать "removeChild: not a child" при logout/размонтаже
+  // Полная зачистка инстансов/оверлеев Materialize
+  const hardCleanupMaterialize = useCallback(() => {
+    try {
+      document.querySelectorAll(".dropdown-trigger").forEach((el) => {
+        const inst = window.M?.Dropdown?.getInstance?.(el);
+        inst?.close?.();
+        inst?.destroy?.();
+      });
+      document.querySelectorAll(".sidenav").forEach((el) => {
+        const inst = window.M?.Sidenav?.getInstance?.(el);
+        inst?.close?.();
+        inst?.destroy?.();
+      });
+    } catch {}
+    // зачистим возможные оверлеи/drag targets
+    document
+      .querySelectorAll(".sidenav-overlay,.drag-target,.modal-overlay")
+      .forEach((el) => el.remove());
+  }, []);
+
+  // Логаут в два такта: 1) destroy M.* 2) на следующий кадр — logout()
+  const handleLogoutClick = useCallback(
+    (e) => {
+      e?.preventDefault?.();
+      hardCleanupMaterialize();
+      requestAnimationFrame(() => {
+        logout(); // внутри у тебя navigate("/auth") + очистка токена/стейта
+      });
+    },
+    [hardCleanupMaterialize, logout]
+  );
+
+  // Инициализация Materialize (и корректный destroy)
   useEffect(() => {
+    // Инициализируем только когда пользователь есть
     if (!user) return;
 
-    // Dropdowns
+    // dropdowns
     const ddEls = document.querySelectorAll(".dropdown-trigger");
     const ddInstances =
-      (window.M?.Dropdown.init?.(ddEls, {
+      window.M?.Dropdown?.init?.(ddEls, {
         constrainWidth: false,
         coverTrigger: false,
         alignment: "right",
-      }) as any[]) || [];
+        container: document.body, // критично, чтобы контент переносился в body
+      }) || [];
 
-    // Sidenavs
+    // sidenavs
     const snEls = document.querySelectorAll(".sidenav");
-    const snInstances =
-      (window.M?.Sidenav.init?.(snEls, { edge: "left" }) as any[]) || [];
+    const snInstances = window.M?.Sidenav?.init?.(snEls, { edge: "left" }) || [];
 
     return () => {
       try {
-        ddInstances.forEach((inst) => {
-          if (inst?.close) inst.close();
-          if (inst?.destroy) inst.destroy();
+        ddInstances.forEach((i) => {
+          i?.close?.();
+          i?.destroy?.();
         });
-        snInstances.forEach((inst) => {
-          if (inst?.close) inst.close();
-          if (inst?.destroy) inst.destroy();
+        snInstances.forEach((i) => {
+          i?.close?.();
+          i?.destroy?.();
         });
-      } catch {
-        // no-op
-      }
+      } catch {}
+      // подчистим любые оставшиеся оверлеи
+      document
+        .querySelectorAll(".sidenav-overlay,.drag-target,.modal-overlay")
+        .forEach((el) => el.remove());
     };
-    // Привязываемся к user.id/role, чтобы пересоздавать инстансы при смене пользователя/ролей
   }, [user?.id, isAdmin]);
 
   return (
@@ -91,12 +124,9 @@ export default function App() {
 
           {user && (
             <ul id="nav-desktop" className="right hide-on-med-and-down">
-              {/* Cart */}
               <li><Link to="/cart">Cart</Link></li>
-              {/* Catalog */}
               <li><Link to="/catalog">Catalog</Link></li>
 
-              {/* Admin dropdown */}
               {isAdmin && (
                 <li>
                   <a
@@ -112,7 +142,6 @@ export default function App() {
                 </li>
               )}
 
-              {/* User dropdown (иконка «person») */}
               <li>
                 <a
                   className="dropdown-trigger"
@@ -131,96 +160,89 @@ export default function App() {
         </div>
       </nav>
 
-      {/* Admin dropdown */}
-      {isAdmin && (
-        <ul id="admin-dd" className="dropdown-content">
-          <li><Link to="/admin/items">Items</Link></li>
-          <li><Link to="/admin/users">Users</Link></li>
-        </ul>
-      )}
+      {/* Admin dropdown — ВСЕГДА в DOM */}
+      <ul id="admin-dd" className="dropdown-content">
+        {isAdmin ? (
+          <>
+            <li><Link to="/admin/items">Items</Link></li>
+            <li><Link to="/admin/users">Users</Link></li>
+          </>
+        ) : (
+          <li className="disabled"><a href="#!">No admin</a></li>
+        )}
+      </ul>
 
-      {/* User dropdown */}
-      {user && (
-        <ul id="user-dd" className="dropdown-content">
-          <li className="disabled">
-            <a href="#!">
-              {fullName || "User"}
-              {user?.role ? ` (${user.role})` : ""}
-            </a>
-          </li>
-          <li className="divider" tabIndex={-1}></li>
-          <li><Link to="/profile">Profile</Link></li>
-          <li><Link to="/orders">Orders</Link></li>
-          <li className="divider" tabIndex={-1}></li>
-          <li>
-            <a
-              href="#!"
-              onClick={(e) => {
-                e.preventDefault();
-                // На всякий уничтожим активные инстансы, если вдруг что-то осталось
-                try {
-                  document.querySelectorAll(".dropdown-trigger").forEach((el) => {
-                    const inst = window.M?.Dropdown?.getInstance?.(el);
-                    inst && inst.destroy();
-                  });
-                  document.querySelectorAll(".sidenav").forEach((el) => {
-                    const inst = window.M?.Sidenav?.getInstance?.(el);
-                    inst && inst.destroy();
-                  });
-                } catch {}
-                logout();
-              }}
-            >
-              Sign out
-            </a>
-          </li>
-        </ul>
-      )}
+      {/* User dropdown — ВСЕГДА в DOM */}
+      <ul id="user-dd" className="dropdown-content">
+        {user ? (
+          <>
+            <li className="disabled">
+              <a href="#!">
+                {fullName || "User"}
+                {user?.role ? ` (${user.role})` : ""}
+              </a>
+            </li>
+            <li className="divider" tabIndex={-1}></li>
+            <li><Link to="/profile">Profile</Link></li>
+            <li><Link to="/orders">Orders</Link></li>
+            <li className="divider" tabIndex={-1}></li>
+            <li>
+              <a href="#!" onClick={handleLogoutClick}>Sign out</a>
+            </li>
+          </>
+        ) : (
+          <li className="disabled"><a href="#!">Not signed in</a></li>
+        )}
+      </ul>
 
-      {/* Mobile sidenav */}
-      {user && (
-        <ul className="sidenav" id="mobile-sidenav">
-          <li>
-            <div className="user-view">
-              <div className="background blue lighten-2"></div>
-              <span className="white-text name">{fullName || "User"}</span>
-              <span className="white-text email">{user?.role || ""}</span>
-            </div>
-          </li>
+      {/* Mobile sidenav — держим в DOM всегда, контент условный */}
+      <ul className="sidenav" id="mobile-sidenav">
+        {user ? (
+          <>
+            <li>
+              <div className="user-view">
+                <div className="background blue lighten-2"></div>
+                <span className="white-text name">{fullName || "User"}</span>
+                <span className="white-text email">{user?.role || ""}</span>
+              </div>
+            </li>
 
-          <li><Link to="/catalog">Catalog</Link></li>
-          <li><Link to="/cart">Cart</Link></li>
-          <li><Link to="/orders">Orders</Link></li>
-          <li><Link to="/profile">Profile</Link></li>
+            <li><Link to="/catalog">Catalog</Link></li>
+            <li><Link to="/cart">Cart</Link></li>
+            <li><Link to="/orders">Orders</Link></li>
+            <li><Link to="/profile">Profile</Link></li>
 
-          {isAdmin && (
-            <>
-              <li className="divider" />
-              <li><Link to="/admin/items">Admin · Items</Link></li>
-              <li><Link to="/admin/users">Admin · Users</Link></li>
-            </>
-          )}
+            {isAdmin && (
+              <>
+                <li className="divider" />
+                <li><Link to="/admin/items">Admin · Items</Link></li>
+                <li><Link to="/admin/users">Admin · Users</Link></li>
+              </>
+            )}
 
-          <li className="divider" />
-          <li>
-            <a
-              href="#!"
-              onClick={(e) => {
-                e.preventDefault();
-                try {
-                  const sn = window.M?.Sidenav?.getInstance?.(
-                    document.getElementById("mobile-sidenav")
-                  );
-                  sn && sn.close();
-                } catch {}
-                logout();
-              }}
-            >
-              Sign out
-            </a>
-          </li>
-        </ul>
-      )}
+            <li className="divider" />
+            <li>
+              <a
+                href="#!"
+                onClick={(e) => {
+                  e.preventDefault();
+                  try {
+                    const sn = window.M?.Sidenav?.getInstance?.(
+                      document.getElementById("mobile-sidenav")
+                    );
+                    sn?.close?.();
+                  } catch {}
+                  handleLogoutClick();
+                }}
+              >
+                Sign out
+              </a>
+            </li>
+          </>
+        ) : (
+          <li className="disabled"><a href="#!">Not signed in</a></li>
+        )}
+      </ul>
 
       {/* Content */}
       <main className="container" style={{ marginTop: 30 }}>
