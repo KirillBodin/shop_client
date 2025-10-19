@@ -34,48 +34,69 @@ export default function App() {
 
   // ИНИЦИАЛИЗИРУЕМ Materialize с обработкой ошибок
   useEffect(() => {
-    try {
-      // Очищаем существующие инстансы перед инициализацией
-      document.querySelectorAll(".dropdown-trigger").forEach((el) => {
-        try {
-          const instance = window.M?.Dropdown?.getInstance?.(el);
-          if (instance) {
-            instance.destroy();
+    // Добавляем небольшую задержку для стабильности DOM
+    const timer = setTimeout(() => {
+      try {
+        // Очищаем существующие инстансы перед инициализацией
+        document.querySelectorAll(".dropdown-trigger").forEach((el) => {
+          try {
+            const instance = window.M?.Dropdown?.getInstance?.(el);
+            if (instance) {
+              instance.destroy();
+            }
+          } catch (e) {
+            // Игнорируем ошибки
           }
-        } catch (e) {
-          // Игнорируем ошибки
-        }
-      });
-
-      document.querySelectorAll(".sidenav").forEach((el) => {
-        try {
-          const instance = window.M?.Sidenav?.getInstance?.(el);
-          if (instance) {
-            instance.destroy();
-          }
-        } catch (e) {
-          // Игнорируем ошибки
-        }
-      });
-
-      // Инициализируем новые инстансы
-      const ddEls = document.querySelectorAll(".dropdown-trigger");
-      if (ddEls.length > 0) {
-        window.M?.Dropdown?.init?.(ddEls, {
-          constrainWidth: false,
-          coverTrigger: false,
-          alignment: "right",
-          container: document.body,
         });
-      }
 
-      const snEls = document.querySelectorAll(".sidenav");
-      if (snEls.length > 0) {
-        window.M?.Sidenav?.init?.(snEls, { edge: "left" });
+        document.querySelectorAll(".sidenav").forEach((el) => {
+          try {
+            const instance = window.M?.Sidenav?.getInstance?.(el);
+            if (instance) {
+              instance.destroy();
+            }
+          } catch (e) {
+            // Игнорируем ошибки
+          }
+        });
+
+        // Инициализируем новые инстансы только если элементы существуют в DOM
+        const ddEls = document.querySelectorAll(".dropdown-trigger");
+        if (ddEls.length > 0 && window.M?.Dropdown) {
+          // Проверяем, что элементы все еще в DOM
+          const validDdEls = Array.from(ddEls).filter(el => 
+            el.isConnected && document.contains(el)
+          );
+          
+          if (validDdEls.length > 0) {
+            window.M.Dropdown.init(validDdEls, {
+              constrainWidth: false,
+              coverTrigger: false,
+              alignment: "right",
+              container: document.body,
+            });
+          }
+        }
+
+        const snEls = document.querySelectorAll(".sidenav");
+        if (snEls.length > 0 && window.M?.Sidenav) {
+          // Проверяем, что элементы все еще в DOM
+          const validSnEls = Array.from(snEls).filter(el => 
+            el.isConnected && document.contains(el)
+          );
+          
+          if (validSnEls.length > 0) {
+            window.M.Sidenav.init(validSnEls, { edge: "left" });
+          }
+        }
+      } catch (error) {
+        console.warn("Materialize initialization error:", error);
       }
-    } catch (error) {
-      console.warn("Materialize initialization error:", error);
-    }
+    }, 50); // Небольшая задержка для стабильности
+
+    return () => {
+      clearTimeout(timer);
+    };
   }, [user]); // Переинициализируем при изменении пользователя
 
   return (

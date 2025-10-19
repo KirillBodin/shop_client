@@ -78,7 +78,7 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // Логаут (новый подход)
+  // Логаут (безопасный подход)
   const navigate = useNavigate();
   
   const logout = async () => {
@@ -90,55 +90,55 @@ export function AuthProvider({ children }) {
       console.warn("Server logout failed:", error);
     }
     
-    // 2) Очищаем локальное состояние
-    setToken(null);
-    setUser(null);
-    
-    // 3) Принудительно очищаем все Materialize элементы
-    // Делаем это ДО навигации, чтобы избежать конфликтов
+    // 2) Полностью отключаем Materialize перед изменением состояния
     try {
-      // Закрываем все dropdowns
-      const dropdowns = document.querySelectorAll(".dropdown-trigger");
-      dropdowns.forEach((el) => {
-        try {
-          const instance = window.M?.Dropdown?.getInstance?.(el);
-          if (instance) {
-            instance.close();
-            instance.destroy();
+      // Уничтожаем все инстансы Materialize
+      if (window.M) {
+        // Dropdowns
+        const dropdowns = document.querySelectorAll(".dropdown-trigger");
+        dropdowns.forEach((el) => {
+          try {
+            const instance = window.M.Dropdown?.getInstance?.(el);
+            if (instance) {
+              instance.destroy();
+            }
+          } catch (e) {
+            // Игнорируем ошибки
           }
-        } catch (e) {
-          // Игнорируем ошибки
-        }
-      });
-      
-      // Закрываем все sidenavs
-      const sidenavs = document.querySelectorAll(".sidenav");
-      sidenavs.forEach((el) => {
-        try {
-          const instance = window.M?.Sidenav?.getInstance?.(el);
-          if (instance) {
-            instance.close();
-            instance.destroy();
+        });
+        
+        // Sidenavs
+        const sidenavs = document.querySelectorAll(".sidenav");
+        sidenavs.forEach((el) => {
+          try {
+            const instance = window.M.Sidenav?.getInstance?.(el);
+            if (instance) {
+              instance.destroy();
+            }
+          } catch (e) {
+            // Игнорируем ошибки
           }
-        } catch (e) {
-          // Игнорируем ошибки
-        }
-      });
-      
-      // Удаляем все overlay элементы
-      const overlays = document.querySelectorAll(".sidenav-overlay, .drag-target, .modal-overlay");
-      overlays.forEach((el) => {
-        try {
-          if (el && el.parentNode) {
-            el.parentNode.removeChild(el);
+        });
+        
+        // Удаляем все overlay элементы
+        const overlays = document.querySelectorAll(".sidenav-overlay, .drag-target, .modal-overlay");
+        overlays.forEach((el) => {
+          try {
+            if (el && el.parentNode) {
+              el.parentNode.removeChild(el);
+            }
+          } catch (e) {
+            // Игнорируем ошибки
           }
-        } catch (e) {
-          // Игнорируем ошибки
-        }
-      });
+        });
+      }
     } catch (error) {
       console.warn("Materialize cleanup error:", error);
     }
+    
+    // 3) Очищаем локальное состояние
+    setToken(null);
+    setUser(null);
     
     // 4) Навигируем на страницу авторизации
     try {

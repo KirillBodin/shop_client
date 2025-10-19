@@ -74,6 +74,27 @@ function ErrorBoundary({ children }) {
   );
 }
 
+// --- Глобальный обработчик ошибок для React Fiber ---
+window.addEventListener('error', (event) => {
+  if (event.error && event.error.message && 
+      event.error.message.includes('removeChild') && 
+      event.error.message.includes('not a child')) {
+    console.warn('Caught React Fiber removeChild error, ignoring:', event.error);
+    event.preventDefault();
+    return false;
+  }
+});
+
+window.addEventListener('unhandledrejection', (event) => {
+  if (event.reason && event.reason.message && 
+      event.reason.message.includes('removeChild') && 
+      event.reason.message.includes('not a child')) {
+    console.warn('Caught React Fiber removeChild promise rejection, ignoring:', event.reason);
+    event.preventDefault();
+    return false;
+  }
+});
+
 // --- React 18 Root render ---
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
