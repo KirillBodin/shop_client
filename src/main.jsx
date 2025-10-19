@@ -1,6 +1,6 @@
 // src/main.jsx
-import "materialize-css/dist/css/materialize.min.css";
-import "materialize-css/dist/js/materialize.min.js";
+// Materialize CSS убран для решения проблемы с logout
+import "./styles.css";
 
 import React from "react";
 import ReactDOM from "react-dom/client";
@@ -74,40 +74,7 @@ function ErrorBoundary({ children }) {
   );
 }
 
-// --- Глобальный обработчик ошибок для React Fiber ---
-window.addEventListener('error', (event) => {
-  if (event.error && (
-      (event.error.message && event.error.message.includes('removeChild')) ||
-      (event.error.stack && event.error.stack.includes('removeChild'))
-  )) {
-    console.warn('Caught React Fiber removeChild error, ignoring:', event.error);
-    event.preventDefault();
-    event.stopPropagation();
-    return false;
-  }
-});
-
-window.addEventListener('unhandledrejection', (event) => {
-  if (event.reason && (
-      (event.reason.message && event.reason.message.includes('removeChild')) ||
-      (event.reason.stack && event.reason.stack.includes('removeChild'))
-  )) {
-    console.warn('Caught React Fiber removeChild promise rejection, ignoring:', event.reason);
-    event.preventDefault();
-    return false;
-  }
-});
-
-// Дополнительная защита - перехватываем все DOMException
-window.addEventListener('error', (event) => {
-  if (event.error instanceof DOMException && 
-      event.error.message.includes('removeChild')) {
-    console.warn('Caught DOMException removeChild error, ignoring:', event.error);
-    event.preventDefault();
-    event.stopPropagation();
-    return false;
-  }
-});
+// Materialize CSS убран, поэтому глобальные обработчики ошибок больше не нужны
 
 // --- React 18 Root render ---
 ReactDOM.createRoot(document.getElementById("root")).render(

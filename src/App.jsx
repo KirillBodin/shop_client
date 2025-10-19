@@ -32,33 +32,95 @@ export default function App() {
   const isAdmin = user?.role === "admin";
   const fullName = `${user?.first_name || ""} ${user?.last_name || ""}`.trim();
 
-  // ИНИЦИАЛИЗИРУЕМ Materialize (упрощенная версия)
+  // Инициализируем простые dropdown и sidenav без Materialize
   useEffect(() => {
-    const timer = setTimeout(() => {
-      try {
-        // Инициализируем dropdowns
-        const ddEls = document.querySelectorAll(".dropdown-trigger");
-        if (ddEls.length > 0 && window.M?.Dropdown) {
-          window.M.Dropdown.init(ddEls, {
-            constrainWidth: false,
-            coverTrigger: false,
-            alignment: "right",
-            container: document.body,
-          });
-        }
-
-        // Инициализируем sidenavs
-        const snEls = document.querySelectorAll(".sidenav");
-        if (snEls.length > 0 && window.M?.Sidenav) {
-          window.M.Sidenav.init(snEls, { edge: "left" });
-        }
-      } catch (error) {
-        console.warn("Materialize initialization error:", error);
+    // Функция для управления dropdown
+    const handleDropdownClick = (e) => {
+      e.preventDefault();
+      const trigger = e.currentTarget;
+      const targetId = trigger.getAttribute('data-target');
+      const dropdown = document.getElementById(targetId);
+      
+      if (dropdown) {
+        // Закрываем все другие dropdowns
+        document.querySelectorAll('.dropdown-content.active').forEach(dd => {
+          if (dd !== dropdown) {
+            dd.classList.remove('active');
+          }
+        });
+        
+        // Переключаем текущий dropdown
+        dropdown.classList.toggle('active');
       }
-    }, 100);
+    };
 
+    // Функция для управления sidenav
+    const handleSidenavToggle = (e) => {
+      e.preventDefault();
+      const sidenav = document.getElementById('mobile-sidenav');
+      const overlay = document.querySelector('.sidenav-overlay');
+      
+      if (sidenav) {
+        sidenav.classList.toggle('active');
+        if (overlay) {
+          overlay.classList.toggle('active');
+        }
+      }
+    };
+
+    // Закрытие dropdown при клике вне его
+    const handleClickOutside = (e) => {
+      if (!e.target.closest('.dropdown-trigger') && !e.target.closest('.dropdown-content')) {
+        document.querySelectorAll('.dropdown-content.active').forEach(dd => {
+          dd.classList.remove('active');
+        });
+      }
+    };
+
+    // Закрытие sidenav при клике на overlay
+    const handleOverlayClick = (e) => {
+      const sidenav = document.getElementById('mobile-sidenav');
+      const overlay = document.querySelector('.sidenav-overlay');
+      
+      if (sidenav) {
+        sidenav.classList.remove('active');
+      }
+      if (overlay) {
+        overlay.classList.remove('active');
+      }
+    };
+
+    // Добавляем обработчики событий
+    document.querySelectorAll('.dropdown-trigger').forEach(trigger => {
+      trigger.addEventListener('click', handleDropdownClick);
+    });
+
+    document.querySelectorAll('.sidenav-trigger').forEach(trigger => {
+      trigger.addEventListener('click', handleSidenavToggle);
+    });
+
+    const overlay = document.querySelector('.sidenav-overlay');
+    if (overlay) {
+      overlay.addEventListener('click', handleOverlayClick);
+    }
+
+    document.addEventListener('click', handleClickOutside);
+
+    // Очистка обработчиков при размонтировании
     return () => {
-      clearTimeout(timer);
+      document.querySelectorAll('.dropdown-trigger').forEach(trigger => {
+        trigger.removeEventListener('click', handleDropdownClick);
+      });
+
+      document.querySelectorAll('.sidenav-trigger').forEach(trigger => {
+        trigger.removeEventListener('click', handleSidenavToggle);
+      });
+
+      if (overlay) {
+        overlay.removeEventListener('click', handleOverlayClick);
+      }
+
+      document.removeEventListener('click', handleClickOutside);
     };
   }, [user]);
 
@@ -151,6 +213,9 @@ export default function App() {
           <li className="disabled"><a href="#!">Not signed in</a></li>
         )}
       </ul>
+
+      {/* Sidenav overlay */}
+      <div className="sidenav-overlay"></div>
 
       {/* Mobile sidenav — ВСЕГДА в DOM (контент условный) */}
       <ul className="sidenav" id="mobile-sidenav">

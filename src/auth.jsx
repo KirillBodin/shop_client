@@ -78,7 +78,7 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // Логаут (радикальный подход)
+  // Логаут (простой подход без Materialize)
   const navigate = useNavigate();
   
   const logout = async () => {
@@ -93,11 +93,8 @@ export function AuthProvider({ children }) {
     setToken(null);
     setUser(null);
     
-    // 3) Принудительно перезагружаем страницу для полной очистки
-    // Это гарантированно решает проблему с Materialize и React Fiber
-    setTimeout(() => {
-      window.location.href = window.location.origin + window.location.pathname + "#/auth";
-    }, 100);
+    // 3) Навигируем на страницу авторизации
+    navigate("/auth", { replace: true });
   };
 
   
