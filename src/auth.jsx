@@ -78,11 +78,24 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // Логаут (ультра простой подход)
+  // Логаут (с очисткой токена)
   const logout = () => {
-    // Просто перезагружаем страницу на логин
-    // Очистка памяти произойдет автоматически при перезагрузке
-    window.location.href = window.location.origin + window.location.pathname + "#/auth";
+
+    
+    // 1) Очищаем токен из localStorage
+    setToken(null);
+    setUser(null);
+    
+    // 2) Принудительно очищаем localStorage
+    localStorage.removeItem('jwt');
+    localStorage.clear(); // Очищаем все localStorage
+    
+   
+    // 3) Даем время для очистки localStorage
+    setTimeout(() => {
+    
+      window.location.href = window.location.origin + window.location.pathname + "#/auth";
+    }, 100);
   };
 
   

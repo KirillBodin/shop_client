@@ -32,22 +32,24 @@ export default function App() {
   const isAdmin = user?.role === "admin";
   const fullName = `${user?.first_name || ""} ${user?.last_name || ""}`.trim();
 
-  // ИНИЦИАЛИЗИРУЕМ Materialize (упрощенная версия)
+  // Инициализация Materialize (dropdown + sidenav)
   useEffect(() => {
     const timer = setTimeout(() => {
       try {
-        // Инициализируем dropdowns
+        // Dropdowns
         const ddEls = document.querySelectorAll(".dropdown-trigger");
         if (ddEls.length > 0 && window.M?.Dropdown) {
           window.M.Dropdown.init(ddEls, {
             constrainWidth: false,
             coverTrigger: false,
             alignment: "right",
-            container: document.body,
+            // ВАЖНО: не переносим меню в body, чтобы не терять обработчики React.
+            // Если твоя сборка всё равно переносит — ниже есть делегирование кликов.
+            // container: document.body, // не используем
           });
         }
 
-        // Инициализируем sidenavs
+        // Sidenavs
         const snEls = document.querySelectorAll(".sidenav");
         if (snEls.length > 0 && window.M?.Sidenav) {
           window.M.Sidenav.init(snEls, { edge: "left" });
@@ -57,14 +59,25 @@ export default function App() {
       }
     }, 100);
 
-    return () => {
-      clearTimeout(timer);
-    };
+    return () => clearTimeout(timer);
   }, [user]);
+
+  // Делегирование кликов по data-logout (гарантированно работает даже если меню вынесено из React-дерева)
+  useEffect(() => {
+    function onDocClick(e) {
+      const el = e.target.closest("[data-logout]");
+      if (el) {
+        e.preventDefault();
+        logout();
+      }
+    }
+    document.addEventListener("click", onDocClick);
+    return () => document.removeEventListener("click", onDocClick);
+  }, [logout]);
 
   return (
     <>
-      {/* Navbar (всегда в DOM) */}
+      {/* Navbar */}
       <nav className="blue darken-3">
         <div className="nav-wrapper container">
           {/* Бургер для мобильной sidenav */}
@@ -115,7 +128,7 @@ export default function App() {
         </div>
       </nav>
 
-      {/* Admin dropdown — ВСЕГДА в DOM (контент условный) */}
+      {/* Admin dropdown — всегда в DOM */}
       <ul id="admin-dd" className="dropdown-content">
         {isAdmin ? (
           <>
@@ -127,7 +140,7 @@ export default function App() {
         )}
       </ul>
 
-      {/* User dropdown — ВСЕГДА в DOM (контент условный) */}
+      {/* User dropdown — всегда в DOM */}
       <ul id="user-dd" className="dropdown-content">
         {user ? (
           <>
@@ -142,9 +155,8 @@ export default function App() {
             <li><Link to="/orders">Orders</Link></li>
             <li className="divider" tabIndex={-1}></li>
             <li>
-              <a href="#!" onClick={(e) => { e.preventDefault(); logout(); }}>
-                Sign out
-              </a>
+              {/* data-logout перехватывается делегированием */}
+              <a href="#!" data-logout="1">Sign out</a>
             </li>
           </>
         ) : (
@@ -152,7 +164,7 @@ export default function App() {
         )}
       </ul>
 
-      {/* Mobile sidenav — ВСЕГДА в DOM (контент условный) */}
+      {/* Mobile sidenav — всегда в DOM */}
       <ul className="sidenav" id="mobile-sidenav">
         {user ? (
           <>
@@ -179,15 +191,8 @@ export default function App() {
 
             <li className="divider" />
             <li>
-              <a
-                href="#!"
-                onClick={(e) => {
-                  e.preventDefault();
-                  logout();
-                }}
-              >
-                Sign out
-              </a>
+              {/* data-logout перехватывается делегированием */}
+              <a href="#!" data-logout="1">Sign out</a>
             </li>
           </>
         ) : (
