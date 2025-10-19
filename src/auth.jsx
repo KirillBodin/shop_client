@@ -78,49 +78,72 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // Логаут (железный)
+  // Логаут (исправленный)
   const navigate = useNavigate();
-  // в src/auth.jsx
- // src/auth.jsx
-const logout = () => {
-  // 1) Аккуратно закрываем/уничтожаем все Materialize-инстансы,
-  //    пока DOM ещё на месте
-  try {
-    // dropdowns
-    document.querySelectorAll(".dropdown-trigger").forEach((el) => {
-      const inst = window.M?.Dropdown?.getInstance?.(el);
-      inst?.close?.();
-      inst?.destroy?.();
-    });
-    // sidenavs
-    document.querySelectorAll(".sidenav").forEach((el) => {
-      const inst = window.M?.Sidenav?.getInstance?.(el);
-      inst?.close?.();
-      inst?.destroy?.();
-    });
-    // подчистим всё, что Materialize вешает на body
-    document
-      .querySelectorAll(".sidenav-overlay,.drag-target,.modal-overlay")
-      .forEach((el) => el.remove());
-  } catch {}
-
-  // 2) На следующий кадр — чистим токен/стейт и навигируем.
-  //    Это даёт Materialize завершить destroy(), чтобы React не успел
-  //    убрать узлы раньше и не словить removeChild(..)
-  requestAnimationFrame(() => {
+  
+  const logout = () => {
+    // 1) Сначала очищаем состояние и токен
     setToken(null);
     setUser(null);
-
+    
+    // 2) Навигируем на страницу авторизации
     try {
       navigate("/auth", { replace: true });
-    } finally {
-      // Фолбэк на HashRouter (если ты его используешь — а судя по main.jsx, да)
+    } catch (error) {
+      // Фолбэк на HashRouter
       if (location.hash && location.hash !== "#/auth") {
         location.hash = "#/auth";
       }
     }
-  });
-};
+    
+    // 3) После навигации очищаем Materialize инстансы
+    // Используем setTimeout чтобы дать React время на рендеринг
+    setTimeout(() => {
+      try {
+        // dropdowns
+        document.querySelectorAll(".dropdown-trigger").forEach((el) => {
+          const inst = window.M?.Dropdown?.getInstance?.(el);
+          if (inst) {
+            try {
+              inst.close();
+              inst.destroy();
+            } catch (e) {
+              // Игнорируем ошибки при уничтожении
+            }
+          }
+        });
+        
+        // sidenavs
+        document.querySelectorAll(".sidenav").forEach((el) => {
+          const inst = window.M?.Sidenav?.getInstance?.(el);
+          if (inst) {
+            try {
+              inst.close();
+              inst.destroy();
+            } catch (e) {
+              // Игнорируем ошибки при уничтожении
+            }
+          }
+        });
+        
+        // подчистим всё, что Materialize вешает на body
+        document
+          .querySelectorAll(".sidenav-overlay,.drag-target,.modal-overlay")
+          .forEach((el) => {
+            try {
+              if (el.parentNode) {
+                el.parentNode.removeChild(el);
+              }
+            } catch (e) {
+              // Игнорируем ошибки при удалении
+            }
+          });
+      } catch (error) {
+        // Игнорируем все ошибки очистки
+        console.warn("Error during Materialize cleanup:", error);
+      }
+    }, 100);
+  };
 
   
 

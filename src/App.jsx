@@ -167,12 +167,6 @@ export default function App() {
                 href="#!"
                 onClick={(e) => {
                   e.preventDefault();
-                  try {
-                    const sn = window.M?.Sidenav?.getInstance?.(
-                      document.getElementById("mobile-sidenav")
-                    );
-                    sn?.close?.();
-                  } catch {}
                   logout();
                 }}
               >
