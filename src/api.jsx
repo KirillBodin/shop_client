@@ -1,7 +1,7 @@
 // src/api.js
 // База API твоего Rails-приложения
 const API_BASE =
-  import.meta.env.VITE_API_BASE_URL?.replace(/\/+$/, "") || "http://localhost:3000";
+  import.meta.env.VITE_API_BASE_URL?.replace(/\/+$/, "") || "https://shoptest-fmov.onrender.com";
 
 // --- Хранение JWT ---
 let _token = null;
